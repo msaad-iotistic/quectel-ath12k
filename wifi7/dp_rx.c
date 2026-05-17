@@ -5,6 +5,7 @@
  */
 
 #include "dp_rx.h"
+#include "ath12k_michael.h"
 #include "../dp_tx.h"
 #include "../peer.h"
 #include "hal_qcn9274.h"
@@ -1011,7 +1012,8 @@ static int ath12k_wifi7_dp_rx_h_verify_tkip_mic(struct ath12k_pdev_dp *dp_pdev,
 	data_len = msdu->len - head_len - tail_len;
 	key = &key_conf->key[NL80211_TKIP_DATA_OFFSET_RX_MIC_KEY];
 
-	michael_mic(key, hdr, data, data_len, mic);
+	ath12k_michael_mic(key, hdr, data, data_len, mic);
+
 	if (memcmp(mic, data + data_len, IEEE80211_CCMP_MIC_LEN))
 		goto mic_fail;
 

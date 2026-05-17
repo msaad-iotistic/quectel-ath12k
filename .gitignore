@@ -3,3 +3,5 @@
 *.mod
 *.cmd
 *.order
+*.bak
+Module.symvers
