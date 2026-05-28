@@ -15,7 +15,6 @@ ath12k_wifi7-y += core.o \
 		  hal.o \
 		  hal_qcn9274.o \
 		  hal_wcn7850.o \
-		  hal_qcc2072.o \
-	  ath12k_michael.o
+		  hal_qcc2072.o
 
 ath12k_wifi7-$(CONFIG_ATH12K_AHB) += ahb.o
