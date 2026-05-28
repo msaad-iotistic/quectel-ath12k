@@ -10,6 +10,13 @@
 #include <linux/mutex.h>
 #include <linux/soc/qcom/qmi.h>
 
+/* QMI_SERVICE_ID_WLFW landed in linux/soc/qcom/qmi.h after 7.0.
+ * Provide a fallback so this driver builds against the 7.0 kernel.
+ */
+#ifndef QMI_SERVICE_ID_WLFW
+#define QMI_SERVICE_ID_WLFW			0x45
+#endif
+
 #define ATH12K_HOST_VERSION_STRING		"WIN"
 #define ATH12K_QMI_WLANFW_TIMEOUT_MS		10000
 #define ATH12K_QMI_MAX_BDF_FILE_NAME_SIZE	64

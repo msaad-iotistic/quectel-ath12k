@@ -8935,10 +8935,10 @@ ath12k_wmi_process_incumbent_signal_interference_evt(struct ath12k_base *ab,
 	ath12k_dbg(ab, ATH12K_DBG_WMI,
 		   "incumbent signal interference bitmap 0x%x (transformed 0x%x)\n",
 		   info.chan_bw_interference_bitmap, transformed_intf_bitmap);
-	cfg80211_incumbent_signal_notify(hw->wiphy,
-					 &arg.chanctx_conf->def,
-					 transformed_intf_bitmap,
-					 GFP_ATOMIC);
+	/* cfg80211_incumbent_signal_notify is not available in 7.0 cfg80211.
+	 * The driver still tracks interference state internally above; we
+	 * just skip the userspace notification on this kernel.
+	 */
 }
 
 static void
