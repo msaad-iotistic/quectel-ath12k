@@ -6841,7 +6841,8 @@ static void ath12k_mac_dec_num_stations(struct ath12k_link_vif *arvif,
 	if (arvif->ahvif->vdev_type == WMI_VDEV_TYPE_STA && !sta->tdls)
 		return;
 
-	ar->num_stations--;
+	if (ar->num_stations)
+		ar->num_stations--;
 
 	if (arvif->num_stations) {
 		arvif->num_stations--;
