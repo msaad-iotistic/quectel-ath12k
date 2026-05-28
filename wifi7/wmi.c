@@ -62,7 +62,7 @@ void ath12k_wifi7_wmi_init_wcn7850(struct ath12k_base *ab,
 				   struct ath12k_wmi_resource_config_arg *config)
 {
 	config->num_vdevs = 4;
-	config->num_peers = 50;
+	config->num_peers = 64;
 	config->num_tids = 32;
 
 	config->num_offload_peers = 3;
