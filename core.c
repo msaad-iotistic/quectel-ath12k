@@ -42,7 +42,7 @@ static DEFINE_MUTEX(ath12k_hw_group_mutex);
 static const struct
 ath12k_mem_profile_based_param ath12k_mem_profile_based_param[] = {
 [ATH12K_QMI_MEMORY_MODE_DEFAULT] = {
-		.num_vdevs = 17,
+		.num_vdevs = 50,
 		.max_client_single = 512,
 		.max_client_dbs = 128,
 		.max_client_dbs_sbs = 128,
