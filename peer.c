@@ -161,13 +161,56 @@ int ath12k_peer_create(struct ath12k *ar, struct ath12k_link_vif *arvif,
 	peer = ath12k_dp_link_peer_find_by_pdev_and_addr(dp, ar->pdev_idx,
 							 arg->peer_addr);
 	if (peer) {
-		ath12k_warn(ar->ab,
-			    "peer_create: stale dp_peer for %pM new_vdev=%d stale_vdev=%d peer_id=%d\n",
-			    arg->peer_addr, arg->vdev_id, peer->vdev_id, peer->peer_id);
+		u32 stale_vdev_id = peer->vdev_id;
+		u16 stale_peer_id = peer->peer_id;
+
+		if (stale_vdev_id == arg->vdev_id) {
+			/* Same-vdev duplicate — should have been caught by the
+			 * rhash-cleanup path in ath12k_mac_station_add. If it
+			 * ever reaches here it's a real state bug; bail out.
+			 */
+			ath12k_warn(ar->ab,
+				    "peer_create: same-vdev dp_peer dup for %pM vdev=%d peer_id=%d\n",
+				    arg->peer_addr, arg->vdev_id, stale_peer_id);
+			spin_unlock_bh(&dp->dp_lock);
+			return -EINVAL;
+		}
+
 		spin_unlock_bh(&dp->dp_lock);
-		return -EINVAL;
+
+		/* Cross-vdev reassoc: client roamed between two APs on the
+		 * same radio. The old vdev's disconnect didn't propagate a
+		 * peer-unmap from firmware in time, so the stale dp_peer entry
+		 * blocks the new peer-create with a silent -EINVAL. Force-
+		 * delete the stale firmware peer and wait for its unmap so the
+		 * new association can proceed.
+		 */
+		ath12k_warn(ar->ab,
+			    "peer_create: cleaning stale dp_peer %pM (stale_vdev=%d peer_id=%d new_vdev=%d)\n",
+			    arg->peer_addr, stale_vdev_id, stale_peer_id,
+			    arg->vdev_id);
+
+		ret = ath12k_peer_delete_send(ar, stale_vdev_id, arg->peer_addr);
+		if (ret) {
+			ath12k_warn(ar->ab,
+				    "peer_create: failed to clean stale peer %pM vdev=%d ret=%d\n",
+				    arg->peer_addr, stale_vdev_id, ret);
+			return ret;
+		}
+
+		ret = ath12k_wait_for_peer_delete_done(ar, stale_vdev_id,
+						       arg->peer_addr);
+		if (ret) {
+			ath12k_warn(ar->ab,
+				    "peer_create: stale peer %pM vdev=%d delete-wait failed: %d\n",
+				    arg->peer_addr, stale_vdev_id, ret);
+			return ret;
+		}
+
+		ar->num_peers--;
+	} else {
+		spin_unlock_bh(&dp->dp_lock);
 	}
-	spin_unlock_bh(&dp->dp_lock);
 
 	ret = ath12k_wmi_send_peer_create_cmd(ar, arg);
 	if (ret) {
