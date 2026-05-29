@@ -7037,8 +7037,15 @@ static int ath12k_mac_station_add(struct ath12k *ar,
 	 * stale entry unconditionally so the new association can proceed.
 	 */
 	temp_arsta = ath12k_link_sta_find_by_addr(ab, arsta->addr);
-	if (temp_arsta)
+	if (temp_arsta) {
+		/* WARN_ON_ONCE the same-radio case so the underlying
+		 * disconnect-path bug surfaces with a stack trace exactly
+		 * once per boot. The unconditional delete above still keeps
+		 * the new association succeeding even when the warning fires.
+		 */
+		WARN_ON_ONCE(temp_arsta->arvif->ar == ar);
 		ath12k_link_sta_rhash_delete(ab, temp_arsta);
+	}
 
 	ret = ath12k_link_sta_rhash_add(ab, arsta);
 	spin_unlock_bh(&ab->base_lock);
