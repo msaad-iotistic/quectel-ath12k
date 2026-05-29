@@ -161,6 +161,9 @@ int ath12k_peer_create(struct ath12k *ar, struct ath12k_link_vif *arvif,
 	peer = ath12k_dp_link_peer_find_by_pdev_and_addr(dp, ar->pdev_idx,
 							 arg->peer_addr);
 	if (peer) {
+		ath12k_warn(ar->ab,
+			    "peer_create: stale dp_peer for %pM new_vdev=%d stale_vdev=%d peer_id=%d\n",
+			    arg->peer_addr, arg->vdev_id, peer->vdev_id, peer->peer_id);
 		spin_unlock_bh(&dp->dp_lock);
 		return -EINVAL;
 	}
