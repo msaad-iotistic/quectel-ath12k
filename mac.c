@@ -7028,10 +7028,16 @@ static int ath12k_mac_station_add(struct ath12k *ar,
 	 * In case of Split PHY and roaming scenario, pdev idx
 	 * might differ but both the pdev will share same rhash
 	 * table. In that case update the rhash table if link_sta is
-	 * already present
+	 * already present.
+	 *
+	 * Also: if the entry belongs to the SAME radio, the previous
+	 * association for this MAC didn't fully clean up on disconnect.
+	 * The next rhash_add will fail with -EEXIST and hostapd will
+	 * see SET_STATION -ENOENT, breaking the association. Remove the
+	 * stale entry unconditionally so the new association can proceed.
 	 */
 	temp_arsta = ath12k_link_sta_find_by_addr(ab, arsta->addr);
-	if (temp_arsta && temp_arsta->arvif->ar != ar)
+	if (temp_arsta)
 		ath12k_link_sta_rhash_delete(ab, temp_arsta);
 
 	ret = ath12k_link_sta_rhash_add(ab, arsta);
