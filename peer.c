@@ -181,33 +181,26 @@ int ath12k_peer_create(struct ath12k *ar, struct ath12k_link_vif *arvif,
 		/* Cross-vdev reassoc: client roamed between two APs on the
 		 * same radio. The old vdev's disconnect didn't propagate a
 		 * peer-unmap from firmware in time, so the stale dp_peer entry
-		 * blocks the new peer-create with a silent -EINVAL. Force-
-		 * delete the stale firmware peer and wait for its unmap so the
-		 * new association can proceed.
+		 * blocks the new peer-create with a silent -EINVAL. Use the
+		 * full ath12k_peer_delete() path (NOT peer_delete_send alone)
+		 * because ath12k_dp_link_peer_unassign removes the rhash entry
+		 * before peer_free runs; skipping unassign leaves a dangling
+		 * rhash node into about-to-be-freed memory and the next
+		 * peer_map for the same MAC hits -EEXIST against the stale
+		 * rhash entry.
 		 */
 		ath12k_warn(ar->ab,
 			    "peer_create: cleaning stale dp_peer %pM (stale_vdev=%d peer_id=%d new_vdev=%d)\n",
 			    arg->peer_addr, stale_vdev_id, stale_peer_id,
 			    arg->vdev_id);
 
-		ret = ath12k_peer_delete_send(ar, stale_vdev_id, arg->peer_addr);
+		ret = ath12k_peer_delete(ar, stale_vdev_id, (u8 *)arg->peer_addr);
 		if (ret) {
 			ath12k_warn(ar->ab,
 				    "peer_create: failed to clean stale peer %pM vdev=%d ret=%d\n",
 				    arg->peer_addr, stale_vdev_id, ret);
 			return ret;
 		}
-
-		ret = ath12k_wait_for_peer_delete_done(ar, stale_vdev_id,
-						       arg->peer_addr);
-		if (ret) {
-			ath12k_warn(ar->ab,
-				    "peer_create: stale peer %pM vdev=%d delete-wait failed: %d\n",
-				    arg->peer_addr, stale_vdev_id, ret);
-			return ret;
-		}
-
-		ar->num_peers--;
 	} else {
 		spin_unlock_bh(&dp->dp_lock);
 	}
