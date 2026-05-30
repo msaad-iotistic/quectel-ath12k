@@ -756,9 +756,9 @@ static void ath12k_wifi7_dp_tx_complete_msdu(struct ath12k_pdev_dp *dp_pdev,
 
 	peer = ath12k_dp_link_peer_find_by_peerid(dp_pdev, ts->peer_id);
 	if (!peer || !peer->sta) {
-		ath12k_err(ab,
-			   "dp_tx: failed to find the peer with peer_id %d\n",
-			   ts->peer_id);
+		ath12k_warn(ab,
+			    "dp_tx: failed to find the peer with peer_id %d\n",
+			    ts->peer_id);
 		ieee80211_free_txskb(ath12k_pdev_dp_to_hw(dp_pdev), msdu);
 		goto exit;
 	}
